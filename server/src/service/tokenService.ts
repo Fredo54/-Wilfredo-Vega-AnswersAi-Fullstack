@@ -6,6 +6,8 @@ const truncateToDay = (date: Date): string => {
   return date.toISOString().split("T")[0];
 };
 
+const initialUserTokens = 1000;
+
 export default class TokenService {
   static async getTokenUsage({ userId }: { userId: string }) {
     const today = new Date();
@@ -45,6 +47,7 @@ export default class TokenService {
       .update(tokens)
       .set({
         tokenCount: userToken[0].tokenCount - tokensUsed,
+        requestCount: userToken[0].requestCount + 1,
       })
       .where(eq(tokens.id, userToken[0].id));
 
@@ -57,7 +60,7 @@ export default class TokenService {
       .insert(tokens)
       .values({
         userId: parseInt(id),
-        tokenCount: 50,
+        tokenCount: initialUserTokens,
         requestCount: 0,
         createdAt: today,
         updatedAt: today,
