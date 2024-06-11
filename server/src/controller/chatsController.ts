@@ -1,56 +1,36 @@
 import "dotenv/config";
-import { db } from "../db";
-import { users, chats } from "../../schema";
-import { eq } from "drizzle-orm";
 import { Request, Response } from "express";
+import ChatsService from "../service/chatsService";
 
 class ChatsController {
   static async getAllChats(req: Request, res: Response) {
-    const { userId } = req.query as { userId: string };
+    const userId = req.query.userId as string;
 
     if (!userId) {
-      return res.status(400).json({ error: "missing userId!" });
+      return res.status(400).json({ error: "Missing userId field!" });
     }
 
     try {
-      // limit to 10 for now
-      const allChats = await db
-        .select({
-          id: chats.id,
-          userId: chats.userId,
-          message: chats.message,
-          response: chats.response,
-          createdAt: chats.createdAt,
-        })
-        .from(chats)
-        .leftJoin(users, eq(chats.userId, users.id))
-        .where(eq(users.id, parseInt(userId)))
-        .limit(10);
-
-      res.json({ chats: allChats });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Something went wrong" });
+      const chats = await ChatsService.getAllChats({ userId });
+      return res.status(200).json({ chats });
+    } catch (err) {
+      return res.status(500).json({ error: "Something went wrong" });
     }
   }
-  static async insertChat({
-    userId,
-    message,
-    response,
-  }: {
-    userId: number;
-    message: string;
-    response: string;
-  }) {
-    return await db
-      .insert(chats)
-      .values({
-        userId,
-        message,
-        response,
-        createdAt: new Date(),
-      })
-      .returning();
+
+  static async insertChats(req: Request, res: Response) {
+    const { userId, message, response } = req.body;
+    if (!userId || !message || !response) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+      ChatsService.insertChat({ userId, message, response });
+      return res.status(200);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Something went wrong" });
+    }
   }
 }
 

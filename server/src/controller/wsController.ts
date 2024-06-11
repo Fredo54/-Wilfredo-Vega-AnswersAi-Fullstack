@@ -2,7 +2,7 @@ import { Socket } from "socket.io";
 import { Message } from "../index";
 import { openai } from "../index";
 import TokenService from "../service/tokenService";
-import ChatsController from "./chatsController";
+import ChatsService from "../service/chatsService";
 
 class WsController {
   static async handleConnect(socket: Socket) {
@@ -58,7 +58,7 @@ class WsController {
       const chatResponse = chatCompletion.choices[0].message.content as string;
 
       userTokens = await TokenService.getTokenUsage({ userId });
-      const newChat = await ChatsController.insertChat({
+      const newChat = await ChatsService.insertChat({
         userId: parseInt(userId),
         message: text,
         response: chatResponse,
@@ -68,7 +68,7 @@ class WsController {
 
       socket.emit("chat message", newChat[0]);
     } catch (error) {
-      const errorChat = await ChatsController.insertChat({
+      const errorChat = await ChatsService.insertChat({
         userId: parseInt(userId),
         message: text,
         response: "You have exceeded your token limit. Please try again later.",
